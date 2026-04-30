@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nassau Treasure Rush — La tua identità pirata</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:       #1a120a;
+    --parchment: #f2e8d0;
+    --parch-mid: #e8d5a8;
+    --parch-dark:#d9c080;
+    --brass:     #b8860b;
+    --brass-lt:  #d4a017;
+    --brass-glow:#ffd700;
+    --rope:      #8b6914;
+    --bad:       #8b1a1a;
+    --good:      #1a5c2a;
+    --good-lt:   #27ae60;
+    --shadow:    rgba(10,5,0,0.75);
+    --card-w:    440px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Crimson Text', serif;
+    overflow: hidden;
+  }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(18,8,0,0.88) 0%, rgba(0,0,0,0.96) 100%);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn .4s ease;
+  }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  /* ── CARD ── */
+  .card {
+    position: relative;
+    width: min(var(--card-w), 94vw);
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E"),
+      linear-gradient(160deg, #f5e8c8 0%, #ead5a0 45%, #d9c070 100%);
+    border: 2px solid var(--brass);
+    border-radius: 4px;
+    box-shadow:
+      0 0 0 1px rgba(184,134,11,.3),
+      0 0 50px rgba(184,134,11,.2),
+      0 24px 60px var(--shadow),
+      inset 0 1px 0 rgba(255,255,255,.4);
+    animation: slideUp .5s cubic-bezier(.22,1,.36,1);
+    overflow: hidden;
+  }
+  @keyframes slideUp {
+    from { transform:translateY(28px) scale(.96); opacity:0 }
+    to   { transform:translateY(0)    scale(1);   opacity:1 }
+  }
+
+  /* corner stars */
+  .card::before, .card::after {
+    content:'✦'; position:absolute;
+    color:var(--brass); font-size:11px; opacity:.55;
+  }
+  .card::before { top:8px; left:10px; }
+  .card::after  { top:8px; right:10px; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    padding: 20px 28px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .progress-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--parch-dark);
+    background: var(--parchment);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--rope);
+    transition: all .3s ease;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .step-dot.active {
+    background: var(--brass);
+    border-color: var(--brass);
+    color: var(--parchment);
+    box-shadow: 0 0 12px rgba(184,134,11,.45);
+  }
+  .step-dot.done {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--parchment);
+  }
+  .step-line {
+    flex: 1;
+    height: 1.5px;
+    background: var(--parch-dark);
+    transition: background .3s ease;
+  }
+  .step-line.done { background: var(--ink); }
+
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+  .step-label {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--rope);
+    opacity: .6;
+    transition: opacity .3s;
+    width: 28px;
+    text-align: center;
+  }
+  .step-label.active { opacity: 1; color: var(--brass); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 28px;
+  }
+  .divider-line {
+    flex:1; height:1px;
+    background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  }
+  .divider-sym { color:var(--brass); font-size:14px; }
+
+  /* ── PANELS ── */
+  .panel { display: none; padding: 0 28px 28px; }
+  .panel.active { display: block; animation: panelIn .35s ease; }
+  @keyframes panelIn {
+    from { opacity:0; transform:translateX(12px) }
+    to   { opacity:1; transform:translateX(0) }
+  }
+
+  /* ── HEADER ── */
+  .panel-header { text-align: center; padding: 20px 0 18px; }
+  .panel-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 9.5px;
+    letter-spacing: .25em;
+    color: var(--brass);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .panel-title {
+    font-family: 'Cinzel', serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+  .panel-sub {
+    font-size: 15px;
+    font-style: italic;
+    color: var(--rope);
+    line-height: 1.4;
+  }
+
+  /* ── FORM FIELDS ── */
+  .field { margin-bottom: 16px; }
+  .field-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--brass);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .field-optional {
+    font-family: 'Crimson Text', serif;
+    font-size: 11px;
+    letter-spacing: .05em;
+    color: var(--rope);
+    opacity: .7;
+    margin-left: 4px;
+    text-transform: none;
+  }
+  input[type="text"],
+  input[type="email"],
+  select {
+    width: 100%;
+    padding: 10px 13px;
+    background: rgba(255,255,255,.35);
+    border: 1.5px solid var(--parch-dark);
+    border-radius: 3px;
+    font-family: 'Crimson Text', serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+  }
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  select:focus {
+    border-color: var(--brass);
+    box-shadow: 0 0 0 3px rgba(184,134,11,.15);
+    background: rgba(255,255,255,.5);
+  }
+  input::placeholder { color: var(--rope); opacity: .55; font-style: italic; }
+  select { cursor: pointer; }
+  select option { background: var(--parchment); color: var(--ink); }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--bad);
+    margin-top: 5px;
+    display: none;
+    font-style: italic;
+  }
+  .field-error.show { display: block; }
+
+  /* ── CREW SIZE GRID ── */
+  .crew-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .crew-btn {
+    border: 1.5px solid var(--parch-dark);
+    border-radius: 3px;
+    padding: 10px 6px;
+    background: rgba(255,255,255,.25);
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+  }
+  .crew-btn:hover { border-color: var(--brass); background: rgba(184,134,11,.08); }
+  .crew-btn.sel {
+    border-color: var(--brass);
+    background: rgba(184,134,11,.15);
+    box-shadow: inset 0 0 0 1px var(--brass);
+  }
+  .crew-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+  .crew-label {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  /* ── RANK OPTIONS ── */
+  .rank-list { display: flex; flex-direction: column; gap: 8px; }
+  .rank-btn {
+    display: flex; align-items: center; gap: 13px;
+    border: 1.5px solid var(--parch-dark);
+    border-radius: 3px;
+    padding: 11px 14px;
+    background: rgba(255,255,255,.25);
+    cursor: pointer;
+    transition: all .2s;
+    text-align: left;
+  }
+  .rank-btn:hover { border-color: var(--brass); background: rgba(184,134,11,.08); }
+  .rank-btn.sel {
+    border-color: var(--brass);
+    background: rgba(184,134,11,.15);
+    box-shadow: inset 0 0 0 1px var(--brass);
+  }
+  .rank-icon { font-size: 24px; flex-shrink: 0; width: 32px; text-align: center; }
+  .rank-text { flex: 1; }
+  .rank-name {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 2px;
+  }
+  .rank-desc {
+    font-size: 13px;
+    font-style: italic;
+    color: var(--rope);
+    line-height: 1.3;
+  }
+  .rank-check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--parch-dark);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .rank-btn.sel .rank-check {
+    background: var(--brass);
+    border-color: var(--brass);
+  }
+  .rank-btn.sel .rank-check::after {
+    content: '✓';
+    color: var(--parchment);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* ── IDENTITY CARD ── */
+  .id-card {
+    background: linear-gradient(145deg, #2a1a08 0%, #1a0f04 100%);
+    border: 1.5px solid var(--brass);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 6px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.05),
+      0 4px 20px rgba(0,0,0,.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .id-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .id-top {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(184,134,11,.3);
+  }
+  .id-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 2px solid var(--brass);
+    background: rgba(184,134,11,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    box-shadow: 0 0 16px rgba(184,134,11,.3);
+  }
+  .id-info { flex: 1; }
+  .id-name {
+    font-family: 'Cinzel', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brass-lt);
+    margin-bottom: 3px;
+    line-height: 1.2;
+  }
+  .id-rank {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--rope);
+  }
+  .id-rows { display: flex; flex-direction: column; gap: 8px; }
+  .id-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .id-row-label {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--rope);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .id-row-value {
+    font-size: 14px;
+    color: var(--parchment);
+    flex: 1;
+  }
+  .id-badge {
+    display: inline-block;
+    background: rgba(184,134,11,.2);
+    border: 1px solid rgba(184,134,11,.4);
+    border-radius: 2px;
+    padding: 2px 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--brass-lt);
+    margin-right: 5px;
+    margin-bottom: 3px;
+  }
+  .id-compass {
+    position: absolute;
+    bottom: 12px; right: 14px;
+    font-size: 28px;
+    opacity: .12;
+  }
+  .id-serial {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: .1em;
+    color: var(--rope);
+    opacity: .5;
+  }
+
+  .id-note {
+    font-size: 13px;
+    font-style: italic;
+    color: var(--rope);
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    display: block; width: 100%;
+    padding: 13px;
+    background: linear-gradient(160deg, #c9950a 0%, #8b6400 100%);
+    border: 1px solid #a07000;
+    border-radius: 3px;
+    color: var(--parchment);
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15);
+    transition: all .15s;
+    position: relative; overflow: hidden;
+    margin-top: 16px;
+  }
+  .btn-primary::after {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(180deg, rgba(255,255,255,.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .btn-primary:hover {
+    background: linear-gradient(160deg, #d4a017 0%, #9a7000 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.2);
+  }
+  .btn-primary:active { transform: translateY(1px); }
+
+  .btn-start {
+    background: linear-gradient(160deg, #1a5c2a 0%, #0d3318 100%);
+    border-color: #27ae60;
+    font-size: 15px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.5), 0 0 20px rgba(39,174,96,.2), inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  .btn-start:hover {
+    background: linear-gradient(160deg, #27ae60 0%, #1a7a3a 100%);
+    box-shadow: 0 6px 20px rgba(0,0,0,.5), 0 0 30px rgba(39,174,96,.3);
+  }
+
+  .btn-back {
+    display: block; width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid rgba(139,105,20,.4);
+    border-radius: 3px;
+    color: var(--rope);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .1em;
+    cursor: pointer;
+    transition: all .15s;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .btn-back:hover { border-color: var(--rope); color: var(--ink); }
+
+  /* ── SPARKLE on final step ── */
+  @keyframes sparkle {
+    0%   { opacity:1; transform:scale(1) translateY(0) }
+    100% { opacity:0; transform:scale(0) translateY(-30px) }
+  }
+  .spark {
+    position: absolute; pointer-events: none;
+    animation: sparkle 1s ease-out forwards;
+    font-size: 12px; color: var(--brass-glow);
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay">
+  <div class="card" id="card">
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap">
+      <div class="progress-steps">
+        <div class="step-dot active" id="dot-1">1</div>
+        <div class="step-line" id="line-1"></div>
+        <div class="step-dot" id="dot-2">2</div>
+        <div class="step-line" id="line-2"></div>
+        <div class="step-dot" id="dot-3">3</div>
+        <div class="step-line" id="line-3"></div>
+        <div class="step-dot" id="dot-4">4</div>
+      </div>
+      <div class="progress-labels">
+        <span class="step-label active" id="lbl-1">Nome</span>
+        <span class="step-label" id="lbl-2">Origini</span>
+        <span class="step-label" id="lbl-3">Rango</span>
+        <span class="step-label" id="lbl-4">Carta</span>
+      </div>
+    </div>
+
+    <div class="divider" style="margin-top:14px; margin-bottom:0">
+      <div class="divider-line"></div>
+      <div class="divider-sym">⚓</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- ══ STEP 1 — NOME ══ -->
+    <div class="panel active" id="panel-1">
+      <div class="panel-header">
+        <div class="panel-eyebrow">Nassau Treasure Rush</div>
+        <div class="panel-title">Come ti chiami,<br>marinaio?</div>
+        <div class="panel-sub">Il tuo nome apparirà in classifica</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-nome">Nome o soprannome</label>
+        <input type="text" id="inp-nome" placeholder="Es. Capitano Marco, Sofia…" maxlength="30" autocomplete="off">
+        <div class="field-error" id="err-nome">Inserisci almeno 2 caratteri per continuare.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-email">
+          Email <span class="field-optional">(opzionale — per ricevere i premi)</span>
+        </label>
+        <input type="email" id="inp-email" placeholder="la@tua.email" autocomplete="off">
+        <div class="field-error" id="err-email">Inserisci un indirizzo email valido, oppure lascia vuoto.</div>
+      </div>
+
+      <button class="btn-primary" onclick="goStep(2)">Avanti &rarr;</button>
+    </div>
+
+    <!-- ══ STEP 2 — ORIGINI ══ -->
+    <div class="panel" id="panel-2">
+      <div class="panel-header">
+        <div class="panel-eyebrow">Il tuo porto d'origine</div>
+        <div class="panel-title">Da dove salpi?</div>
+        <div class="panel-sub">E navighi da solo o in compagnia?</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-paese">Paese</label>
+        <select id="inp-paese">
+          <option value="">— Seleziona il tuo paese —</option>
+          <option value="IT">🇮🇹 Italia</option>
+          <option value="US">🇺🇸 Stati Uniti</option>
+          <option value="UK">🇬🇧 Regno Unito</option>
+          <option value="DE">🇩🇪 Germania</option>
+          <option value="FR">🇫🇷 Francia</option>
+          <option value="ES">🇪🇸 Spagna</option>
+          <option value="CA">🇨🇦 Canada</option>
+          <option value="AU">🇦🇺 Australia</option>
+          <option value="BS">🇧🇸 Bahamas</option>
+          <option value="BR">🇧🇷 Brasile</option>
+          <option value="MX">🇲🇽 Messico</option>
+          <option value="JP">🇯🇵 Giappone</option>
+          <option value="CN">🇨🇳 Cina</option>
+          <option value="IN">🇮🇳 India</option>
+          <option value="NL">🇳🇱 Paesi Bassi</option>
+          <option value="PT">🇵🇹 Portogallo</option>
+          <option value="SE">🇸🇪 Svezia</option>
+          <option value="NO">🇳🇴 Norvegia</option>
+          <option value="CH">🇨🇭 Svizzera</option>
+          <option value="AT">🇦🇹 Austria</option>
+          <option value="OTHER">🌍 Altro</option>
+        </select>
+        <div class="field-error" id="err-paese">Seleziona il tuo paese per continuare.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">La tua ciurma</label>
+        <div class="crew-grid">
+          <div class="crew-btn" onclick="selCrew(this,'solo')">
+            <span class="crew-icon">🧭</span>
+            <span class="crew-label">Da solo</span>
+          </div>
+          <div class="crew-btn" onclick="selCrew(this,'coppia')">
+            <span class="crew-icon">⚓</span>
+            <span class="crew-label">In coppia</span>
+          </div>
+          <div class="crew-btn" onclick="selCrew(this,'famiglia')">
+            <span class="crew-icon">🗺️</span>
+            <span class="crew-label">Famiglia</span>
+          </div>
+          <div class="crew-btn" onclick="selCrew(this,'gruppo')">
+            <span class="crew-icon">🏴‍☠️</span>
+            <span class="crew-label">Gruppo</span>
+          </div>
+        </div>
+        <div class="field-error" id="err-crew">Scegli la dimensione della tua ciurma.</div>
+      </div>
+
+      <button class="btn-primary" onclick="goStep(3)">Avanti &rarr;</button>
+      <button class="btn-back" onclick="goStep(1)">&larr; Indietro</button>
+    </div>
+
+    <!-- ══ STEP 3 — RANGO ══ -->
+    <div class="panel" id="panel-3">
+      <div class="panel-header">
+        <div class="panel-eyebrow">Il tuo ruolo nella ciurma</div>
+        <div class="panel-title">Scegli il tuo rango</div>
+        <div class="panel-sub">Cambierà come Mary Read ti parlerà</div>
+      </div>
+
+      <div class="rank-list">
+        <div class="rank-btn" onclick="selRank(this,'navigatore','⛵','Navigatore')">
+          <div class="rank-icon">⛵</div>
+          <div class="rank-text">
+            <span class="rank-name">Navigatore</span>
+            <span class="rank-desc">Ami la storia e i dettagli. Mary Read ti racconta ogni luogo in profondità.</span>
+          </div>
+          <div class="rank-check"></div>
+        </div>
+        <div class="rank-btn" onclick="selRank(this,'cacciatore','🔍','Cacciatore di Tesori')">
+          <div class="rank-icon">🔍</div>
+          <div class="rank-text">
+            <span class="rank-name">Cacciatore di Tesori</span>
+            <span class="rank-desc">Sei qui per i premi. Mary Read enfatizza ogni ricompensa che guadagni.</span>
+          </div>
+          <div class="rank-check"></div>
+        </div>
+        <div class="rank-btn" onclick="selRank(this,'velocista','⚡','Velocista')">
+          <div class="rank-icon">⚡</div>
+          <div class="rank-text">
+            <span class="rank-name">Velocista</span>
+            <span class="rank-desc">Vuoi dominare la classifica. Il timer è sempre in primo piano.</span>
+          </div>
+          <div class="rank-check"></div>
+        </div>
+        <div class="rank-btn" onclick="selRank(this,'fortunato','🎲','Pirata Fortunato')">
+          <div class="rank-icon">🎲</div>
+          <div class="rank-text">
+            <span class="rank-name">Pirata Fortunato</span>
+            <span class="rank-desc">Ti fidi del caso. Mary Read commenta il dado con più drammaticità.</span>
+          </div>
+          <div class="rank-check"></div>
+        </div>
+      </div>
+      <div class="field-error" id="err-rank" style="margin-top:8px">Scegli il tuo rango per continuare.</div>
+
+      <button class="btn-primary" onclick="goStep(4)">Avanti &rarr;</button>
+      <button class="btn-back" onclick="goStep(2)">&larr; Indietro</button>
+    </div>
+
+    <!-- ══ STEP 4 — CARTA D'IDENTITÀ ══ -->
+    <div class="panel" id="panel-4">
+      <div class="panel-header">
+        <div class="panel-eyebrow">La tua identità pirata</div>
+        <div class="panel-title">Tutto pronto,<br>marinaio</div>
+      </div>
+
+      <div class="id-card" id="id-card">
+        <div class="id-serial" id="id-serial">#NTR-0000</div>
+        <div class="id-compass">🧭</div>
+        <div class="id-top">
+          <div class="id-avatar" id="id-avatar">⛵</div>
+          <div class="id-info">
+            <div class="id-name" id="id-name">—</div>
+            <div class="id-rank" id="id-rank">Nassau Treasure Rush</div>
+          </div>
+        </div>
+        <div class="id-rows">
+          <div class="id-row">
+            <div class="id-row-label">Origine</div>
+            <div class="id-row-value" id="id-paese">—</div>
+          </div>
+          <div class="id-row">
+            <div class="id-row-label">Ciurma</div>
+            <div class="id-row-value" id="id-crew">—</div>
+          </div>
+          <div class="id-row">
+            <div class="id-row-label">Equipaggiamento</div>
+            <div class="id-row-value">
+              <span class="id-badge">Timer attivo</span>
+              <span class="id-badge">3 suggerimenti</span>
+              <span class="id-badge" id="id-rank-badge">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="id-note">
+        Mary Read ti sta aspettando.<br>
+        Il cronometro parte quando premi <em>Inizia la caccia</em>.
+      </div>
+
+      <button class="btn-primary btn-start" onclick="startGame()">
+        ⚓ &nbsp; Inizia la caccia
+      </button>
+      <button class="btn-back" onclick="goStep(3)">&larr; Modifica</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── STATO ──
+const state = {
+  nome:    '',
+  email:   '',
+  paese:   '',
+  crew:    '',
+  rank:    '',
+  rankLabel: '',
+  rankIcon: ''
+};
+
+let currentStep = 1;
+
+// Paese → nome leggibile
+const paesiMap = {
+  IT:'Italia', US:'Stati Uniti', UK:'Regno Unito', DE:'Germania',
+  FR:'Francia', ES:'Spagna', CA:'Canada', AU:'Australia',
+  BS:'Bahamas', BR:'Brasile', MX:'Messico', JP:'Giappone',
+  CN:'Cina', IN:'India', NL:'Paesi Bassi', PT:'Portogallo',
+  SE:'Svezia', NO:'Norvegia', CH:'Svizzera', AT:'Austria', OTHER:'Altro'
+};
+const crewMap = {
+  solo:'Navigatore solitario', coppia:'In coppia',
+  famiglia:'In famiglia', gruppo:'In gruppo'
+};
+
+// ── NAVIGAZIONE ──
+function goStep(n) {
+  if (n > currentStep && !validateStep(currentStep)) return;
+
+  document.getElementById('panel-' + currentStep).classList.remove('active');
+  document.getElementById('panel-' + n).classList.add('active');
+
+  // Aggiorna dots
+  for (let i = 1; i <= 4; i++) {
+    const dot  = document.getElementById('dot-' + i);
+    const lbl  = document.getElementById('lbl-' + i);
+    dot.classList.remove('active','done');
+    lbl.classList.remove('active');
+    if (i < n)       { dot.classList.add('done'); dot.textContent = '✓'; }
+    else if (i === n) { dot.classList.add('active'); dot.textContent = i; lbl.classList.add('active'); }
+    else              { dot.textContent = i; }
+  }
+  // Aggiorna lines
+  for (let i = 1; i <= 3; i++) {
+    const line = document.getElementById('line-' + i);
+    line.classList.toggle('done', i < n);
+  }
+
+  if (n === 4) buildCard();
+  currentStep = n;
+}
+
+// ── VALIDAZIONE ──
+function validateStep(step) {
+  if (step === 1) {
+    const nome  = document.getElementById('inp-nome').value.trim();
+    const email = document.getElementById('inp-email').value.trim();
+    let ok = true;
+    if (nome.length < 2) {
+      document.getElementById('err-nome').classList.add('show'); ok = false;
+    } else {
+      document.getElementById('err-nome').classList.remove('show');
+      state.nome = nome;
+    }
+    if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      document.getElementById('err-email').classList.add('show'); ok = false;
+    } else {
+      document.getElementById('err-email').classList.remove('show');
+      state.email = email;
+    }
+    return ok;
+  }
+  if (step === 2) {
+    const paese = document.getElementById('inp-paese').value;
+    let ok = true;
+    if (!paese) {
+      document.getElementById('err-paese').classList.add('show'); ok = false;
+    } else {
+      document.getElementById('err-paese').classList.remove('show');
+      state.paese = paese;
+    }
+    if (!state.crew) {
+      document.getElementById('err-crew').classList.add('show'); ok = false;
+    } else {
+      document.getElementById('err-crew').classList.remove('show');
+    }
+    return ok;
+  }
+  if (step === 3) {
+    if (!state.rank) {
+      document.getElementById('err-rank').classList.add('show'); return false;
+    }
+    document.getElementById('err-rank').classList.remove('show');
+    return true;
+  }
+  return true;
+}
+
+// ── SELEZIONI ──
+function selCrew(el, val) {
+  document.querySelectorAll('.crew-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  state.crew = val;
+  document.getElementById('err-crew').classList.remove('show');
+}
+
+function selRank(el, val, icon, label) {
+  document.querySelectorAll('.rank-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  state.rank = val;
+  state.rankLabel = label;
+  state.rankIcon  = icon;
+  document.getElementById('err-rank').classList.remove('show');
+}
+
+// ── COSTRUISCE LA CARD ──
+function buildCard() {
+  const serial = '#NTR-' + Math.floor(1000 + Math.random() * 9000);
+  const paese = paesiMap[document.getElementById('inp-paese').value] || '—';
+
+  document.getElementById('id-serial').textContent = serial;
+  document.getElementById('id-avatar').textContent = state.rankIcon;
+  document.getElementById('id-name').textContent   = state.nome;
+  document.getElementById('id-rank').textContent   = state.rankLabel + ' · ' + paese;
+  document.getElementById('id-paese').textContent  = paese;
+  document.getElementById('id-crew').textContent   = crewMap[state.crew] || '—';
+  document.getElementById('id-rank-badge').textContent = state.rankLabel;
+
+  // Sparkles
+  const card = document.getElementById('card');
+  for (let i = 0; i < 8; i++) {
+    const sp = document.createElement('div');
+    sp.className = 'spark';
+    sp.textContent = ['✦','⭐','✧','⚓'][Math.floor(Math.random()*4)];
+    sp.style.cssText = `
+      left:${15+Math.random()*70}%;
+      top:${20+Math.random()*60}%;
+      animation-delay:${Math.random()*.5}s;
+    `;
+    card.appendChild(sp);
+    setTimeout(() => sp.remove(), 1500);
+  }
+}
+
+// ── START ──
+function startGame() {
+  const data = {
+    type:         'player_created',
+    player_name:  state.nome,
+    player_email: state.email,
+    player_paese: document.getElementById('inp-paese').value,
+    player_crew:  state.crew,
+    player_rank:  state.rank
+  };
+
+  // Metodo 1: postMessage al parent (iframe)
+  try { window.parent.postMessage(data, '*'); } catch(e) {}
+
+  // Metodo 2: variabili globali accessibili da 3DVista
+  window.playerData = data;
+
+  // Metodo 3: API nativa 3DVista
+  try {
+    if (typeof vtour !== 'undefined' && vtour.set) {
+      vtour.set('player_name',  state.nome);
+      vtour.set('player_email', state.email);
+      vtour.set('player_paese', document.getElementById('inp-paese').value);
+      vtour.set('player_crew',  state.crew);
+      vtour.set('player_rank',  state.rank);
+      vtour.set('onboarding_done', true);
+    }
+  } catch(e) {}
+
+  // Feedback visivo prima di chiudere
+  const btn = document.querySelector('.btn-start');
+  btn.textContent = '⚓  Buona fortuna, ' + state.nome + '!';
+  btn.style.background = 'linear-gradient(160deg, #27ae60 0%, #1a7a3a 100%)';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    // Fade out overlay
+    const overlay = document.querySelector('.overlay');
+    overlay.style.transition = 'opacity .4s';
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      try { window.parent.postMessage({ type:'onboarding_complete' }, '*'); } catch(e) {}
+    }, 400);
+  }, 1200);
+}
+
+// ── ENTER KEY ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (currentStep < 4) goStep(currentStep + 1);
+    else startGame();
+  }
+});
+
+// ── Live validation ──
+document.getElementById('inp-nome').addEventListener('input', function() {
+  if (this.value.trim().length >= 2)
+    document.getElementById('err-nome').classList.remove('show');
+});
+document.getElementById('inp-email').addEventListener('input', function() {
+  if (!this.value || this.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
+    document.getElementById('err-email').classList.remove('show');
+});
+</script>
+
+</body>
+</html>
